@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@theme {
+  /* --- Brand Colors (Elite Palette) --- */
+  --color-background: oklch(0.98 0.01 240); 
+  --color-surface: #ffffff;
+  --color-foreground: oklch(0.2 0.02 240); 
+  
+  --color-primary: oklch(0.62 0.19 256); 
+  --color-primary-foreground: #ffffff;
+  
+  --color-secondary: oklch(0.65 0.2 160); 
+  --color-accent: oklch(0.75 0.15 80); 
+  
+  --color-muted: oklch(0.9 0.02 240); 
+  --color-border: oklch(0.9 0.02 240);
+
+  /* --- UI Tokens --- */
+  --radius-lg: 12px;
+  --font-sans: "Inter", ui-sans-serif, system-ui;
+  --font-heading: "Plus Jakarta Sans", sans-serif;
+}
+
+/* --- Dark Mode Overrides (Silent & Visible) --- */
+@variant dark (&:where(.dark, .dark *));
+
+.dark {
+  /* Deep, muted navy background */
+  --color-background: oklch(0.12 0.015 240); 
+  /* Softer surface for cards */
+  --color-surface: oklch(0.16 0.02 240); 
+  /* Muted white foreground */
+  --color-foreground: oklch(0.9 0.01 240);
+  
+  /* SILENT PRIMARY: Muted Indigo-Grey */
+  --color-primary: oklch(0.45 0.08 250); 
+  /* Darker border for low-profile depth */
+  --color-border: oklch(0.22 0.02 240); 
+}
+
+/* --- Global Base Styles --- */
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased transition-colors duration-500;
+    font-family: var(--font-sans);
+  }
+  
+  h1, h2, h3 {
+    font-family: var(--font-heading);
+  }
+}
+
+/* --- High-End Components --- */
+@layer components {
+  .btn-primary {
+    /* LIGHT MODE: Standard Professional Blue */
+    @apply bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold 
+           transition-all hover:bg-blue-700 active:scale-95 
+           shadow-lg shadow-blue-500/10 flex items-center justify-center border-none;
+  }
+
+  .dark .btn-primary {
+    /* DARK MODE: Muted, Low-Glow Primary */
+    background-color: var(--color-primary) !important;
+    @apply text-white/90 shadow-none border border-white/5 hover:brightness-125;
+  }
+  
+  .glass-card {
+    @apply bg-surface/80 dark:bg-surface/60 backdrop-blur-xl border border-border/50 
+           rounded-[2rem] shadow-xl transition-all duration-300;
+  }
+
+  input {
+    @apply bg-background/50 border border-border/60 rounded-xl px-4 py-3 
+           focus:ring-2 focus:ring-primary/20 focus:border-primary 
+           outline-none transition-all text-sm;
+  }
+}
