@@ -2,13 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import useAuth from '../utils/useAuth';
-import { getDashboardOverview, getRecentTopics, getWeakTopics } from '../api/analytics';
+import { getDashboardOverview, getRecentTopics, getWeakTopics,getInsight,getUserRank} from '../api/analytics';
 import { mapDashboardData } from '../utils/dashboardMapper';
 import UniversalTopicCard from '../components/UniversalTopicCard';
 import { MetricCard, ConsistencyMiniChart } from '../components/DashboardComponents';
 import Navbar from '../components/Navbar';
+import Loader from './Loader';
 
 const Dashboard = () => {
+  const [Userrank,setRank]=useState(0);
+  const [insights,setInsights]=useState("");
   const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [state, setState] = useState({
@@ -25,18 +28,19 @@ const Dashboard = () => {
         const [overviewRaw, recentRaw, weakRaw] = await Promise.all([
           getDashboardOverview(),
           getRecentTopics(),
-          getWeakTopics()
+          getWeakTopics(),
         ]);
 
         const normalizeTopic = (t) => ({
           id: t.topicId,
+          sectionId: t.sectionId,
           title: t.topicName,
           status: t.overall >= 80 ? "Mastered" : t.overall > 0 ? "In Progress" : "Not Started",
           easy: t.easy ?? 0, med: t.med ?? 0, hard: t.hard ?? 0,
           overall: t.overall ?? 0, attempts: t.attempts ?? 0
         });
 
-        console.log(recentRaw);
+        console.log(weakRaw);
         
 
         setState({
@@ -53,13 +57,31 @@ const Dashboard = () => {
     fetchAllData();
   }, []);
 
+  //for setting inghts and rank
+  useEffect(()=>{
+    const fetchInfo=async()=>{
+      try {
+         const insight_data=await getInsight();
+         console.log(insight_data);
+
+         if(!insight_data) return;
+         setInsights(insight_data.insight);
+        
+         const rank_data=await getUserRank();
+         console.log(rank_data);
+         if(!rank_data) return;
+         setRank(rank_data.rank);
+         
+      } catch (error) {
+        console.error("Dashboard Sync Error:", error);
+      }
+    }
+    fetchInfo();
+  },[])
+
   if (state.loading) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
-      <motion.div 
-        animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-        transition={{ repeat: Infinity, duration: 2 }}
-        className="w-12 h-1 bg-primary rounded-full shadow-[0_0_20px_rgba(var(--color-primary),0.3)]" 
-      />
+      <Loader/>
     </div>
   );
 
@@ -69,7 +91,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background text-foreground transition-colors duration-500 overflow-x-hidden">
       <Navbar onOpenMenu={() => setMobileOpen(true)} />
 
-      <main className="relative z-10 pt-16 pb-8 px-6 lg:px-8">
+      <main className="relative z-10 pt-8 pb-8 px-4 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-12">
 
           <header className="space-y-1">
@@ -89,7 +111,7 @@ const Dashboard = () => {
             <MetricCard label="🎯 Accuracy" value={`${metrics.accuracy}%`} meta="Accuracy Rate" />
             <MetricCard label="⚙️ Solved" value={metrics.solved} meta="Total Covered" />
             <MetricCard label="📈 Readiness" value={`${metrics.readiness}%`} />
-            <MetricCard label="🏆 Rank" value={metrics.rank || "Top 5%"} meta="Global Rank" colorClass="text-accent" />
+            <MetricCard label="🏆 Rank" value={Userrank || "Top 5%"} meta="Global Rank" colorClass="text-accent" />
           </section>
 
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
@@ -99,11 +121,11 @@ const Dashboard = () => {
             </div>
           
             <div className="glass-card p-8 bg-primary/5 dark:bg-primary/[0.03] border-primary/20 flex flex-col justify-center relative overflow-hidden group">
-              <div className="absolute -right-10 -top-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl transition-opacity group-hover:opacity-100 opacity-50" />
+              <div className="absolute -right-10 -top-10 w-30 h-20 bg-primary/20 rounded-full blur-3xl transition-opacity group-hover:opacity-100 opacity-50" />
               <span className="text-4xl mb-6 transform group-hover:rotate-12 transition-transform inline-block">🚀</span>
               <h4 className="text-2xl font-heading font-bold mb-3 tracking-tighter">Pilot Insight</h4>
               <p className="text-sm text-foreground/50 leading-relaxed font-medium">
-                Your velocity is peaked. Practicing <span className="text-primary font-bold">Medium Topics</span> on weekends will increase your mock readiness by <span className="text-primary font-bold">14%</span>.
+                {insights}
               </p>
             </div>
           </section>

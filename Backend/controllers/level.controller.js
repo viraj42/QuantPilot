@@ -1,8 +1,17 @@
 const mongoose = require("mongoose");
 const Attempt = require("../models/attempt.model");
 const Topic = require("../models/topic.model");
+const Question = require("../models/question.model");
 const LEVEL_CONFIG = require("../utils/levelConfig");
 const { isLevelUnlocked } = require("../utils/unlockEvaluator");
+// ✅ NEW IMPORT — only addition to this file
+const { generateAndSaveQuestions } = require("../utils/aiQuestionGenerator");
+
+// ============================================
+// THRESHOLD for pre-generation trigger
+// If unseen questions for user < this → fire AI
+// ============================================
+const PRE_GEN_THRESHOLD = 20;
 
 exports.getLevelRoadmap = async (req, res) => {
   try {
@@ -50,7 +59,6 @@ exports.getLevelRoadmap = async (req, res) => {
     const levels = [];
     const maxLevel = Object.keys(LEVEL_CONFIG.levels).length;
 
-
     for (let level = 1; level <= maxLevel; level++) {
       const config = LEVEL_CONFIG.levels[level];
       const difficulty = config.difficulty;
@@ -67,23 +75,24 @@ exports.getLevelRoadmap = async (req, res) => {
       // Build unlock requirement text
       let unlockRequirement = null;
 
-    if (level > 1) {
-    const prevLevelConfig = LEVEL_CONFIG.levels[level - 1];
+      if (level > 1) {
+        const prevLevelConfig = LEVEL_CONFIG.levels[level - 1];
 
-    if (
-        prevLevelConfig &&
-        prevLevelConfig.minAccuracyToUnlockNext !== null
-    ) {
-        const difficulty =
-        prevLevelConfig.difficulty.charAt(0).toUpperCase() +
-        prevLevelConfig.difficulty.slice(1);
+        if (
+          prevLevelConfig &&
+          prevLevelConfig.minAccuracyToUnlockNext !== null
+        ) {
+          const difficultyLabel =
+            prevLevelConfig.difficulty.charAt(0).toUpperCase() +
+            prevLevelConfig.difficulty.slice(1);
 
-        const percent =
-        Math.round(prevLevelConfig.minAccuracyToUnlockNext * 100);
+          const percent = Math.round(
+            prevLevelConfig.minAccuracyToUnlockNext * 100
+          );
 
-        unlockRequirement = `${difficulty} accuracy ≥ ${percent}%`;
-    }
-    }
+          unlockRequirement = `${difficultyLabel} accuracy ≥ ${percent}%`;
+        }
+      }
 
       levels.push({
         level,
@@ -105,6 +114,9 @@ exports.getLevelRoadmap = async (req, res) => {
         ? Math.round((totalCorrect / totalAttempts) * 100)
         : 0;
 
+    // ============================================
+    // ✅ SEND RESPONSE FIRST — user gets roadmap instantly
+    // ============================================
     res.json({
       topic: {
         id: topic._id,
@@ -113,9 +125,70 @@ exports.getLevelRoadmap = async (req, res) => {
       },
       levels,
     });
+
+    // ============================================
+    // ✅ BACKGROUND PRE-GENERATION — fires AFTER response sent
+    //
+    // Strategy:
+    // 1. Find the current active level user is working on
+    //    (first unlocked + not completed level)
+    // 2. Check unseen count for THAT difficulty only
+    // 3. If below threshold → generate 20 questions silently
+    //
+    // This targets token efficiency — only generates for
+    // the difficulty the user will actually encounter next.
+    // ============================================
+    try {
+      // Find current active level
+      const currentLevel =
+        levels.find((l) => l.unlocked && !l.completed) ||
+        levels[levels.length - 1];
+
+      const targetDifficulty = currentLevel.difficulty;
+
+      // Get attempted question IDs for this difficulty
+      const attemptedDocs = await Attempt.find({
+        userId,
+        topicId,
+        difficulty: targetDifficulty,
+      })
+        .select("questionId")
+        .lean();
+
+      const attemptedIds = attemptedDocs.map((a) => a.questionId);
+
+      // Count unseen questions for this user + difficulty
+      const unseenCount = await Question.countDocuments({
+        topicId,
+        difficulty: targetDifficulty,
+        _id: { $nin: attemptedIds },
+      });
+
+      if (unseenCount < PRE_GEN_THRESHOLD) {
+        console.log(
+          `[PreGen] Unseen ${unseenCount} < ${PRE_GEN_THRESHOLD} for "${topic.name}" [${targetDifficulty}] — triggering AI`
+        );
+
+        // Fire and forget — generateAndSaveQuestions has its own
+        // internal lock so concurrent calls are safe
+        generateAndSaveQuestions(
+          topicId.toString(),
+          topic.name,
+          targetDifficulty
+        ).catch((err) =>
+          console.error("[PreGen] Background generation error:", err.message)
+        );
+      }
+    } catch (bgErr) {
+      // Background error must NEVER affect the response already sent
+      console.error("[PreGen] Background check error:", bgErr.message);
+    }
+    // ============================================
+    // END BACKGROUND BLOCK
+    // ============================================
   } catch (err) {
     console.error("Level Roadmap Error:", err);
-    res.status(500).json({
+    return res.status(500).json({
       message: "Server error",
     });
   }

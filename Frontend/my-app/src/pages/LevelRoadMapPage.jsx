@@ -5,6 +5,7 @@ import { TopicHeader, LevelNode, RoadmapConnector } from '../components/LevelCom
 import { SectionProgressStrip } from '../components/TopicPageComponent';
 import Navbar from '../components/Navbar';
 import Background3D from '../components/Background3D';
+import Loader from './Loader';
 
 const LevelRoadmapPage = () => {
 
@@ -82,7 +83,7 @@ const LevelRoadmapPage = () => {
       <Background3D />
       <Navbar />
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-1 bg-primary animate-pulse rounded-full" />
+        <Loader/>
       </div>
     </div>
   );

@@ -24,6 +24,10 @@ const userSchema = new mongoose.Schema(
       default: "student",
       enum: ["student","admin"],
     },
+    insight: {
+    text: String,
+    lastGeneratedAt: Date,
+  },
   },
   { timestamps: true }
 );

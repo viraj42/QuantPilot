@@ -60,16 +60,16 @@ export const TopicCard = ({ topic, sectionSlug }) => {
   const status = getStatus();
 
   return (
-    <motion.div
-      whileHover={{ 
-        y: -8, 
-        rotateX: 2, 
-        rotateY: -2,
-        transition: { duration: 0.2 } 
-      }}
-      style={{ perspective: 1000 }}
-      className="glass-card p-6 flex flex-col justify-between min-h-[280px] group cursor-pointer border-border/40 hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5 transition-all"
-    >
+<motion.div
+  whileHover={{ 
+    y: -8, 
+    rotateX: 2, 
+    rotateY: -2,
+    transition: { duration: 0.2 } 
+  }}
+  style={{ perspective: 1000 }}
+  className="glass-card p-5 md:p-6 flex flex-col justify-between min-h-64 md:min-h-72 w-full group cursor-pointer border-border/40 hover:border-primary/40 transition-all"
+>
       <Link to={`/practice/${sectionSlug}/${topic.topicId}`} className="h-full flex flex-col">
         {/* 8. Card Header */}
         <div className="flex justify-between items-start mb-8">

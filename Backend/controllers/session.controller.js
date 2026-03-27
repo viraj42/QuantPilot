@@ -1,27 +1,19 @@
 const mongoose = require("mongoose");
 const Attempt = require("../models/attempt.model");
 
-
 // ============================================
-// 1️⃣ SESSION SUMMARY ANALYTICS
+// 1. SESSION SUMMARY
 // ============================================
-
 module.exports.getSessionSummary = async (req, res) => {
   try {
     const { sessionId } = req.params;
     const userId = req.user.id;
 
-    console.log(sessionId);
-    
-
     if (!mongoose.Types.ObjectId.isValid(sessionId)) {
       return res.status(400).json({ message: "Invalid sessionId" });
     }
 
-    const attempts = await Attempt.find({
-      userId,
-      sessionId,
-    });
+    const attempts = await Attempt.find({ userId, sessionId });
 
     if (!attempts.length) {
       return res.status(404).json({ message: "No attempts found for this session" });
@@ -39,9 +31,7 @@ module.exports.getSessionSummary = async (req, res) => {
         correctCount++;
         if (!attempt.isGuess) strongCount++;
       }
-
       if (attempt.isGuess) guessedCount++;
-
       totalTime += attempt.timeTaken || 0;
     });
 
@@ -64,11 +54,9 @@ module.exports.getSessionSummary = async (req, res) => {
   }
 };
 
-
 // ============================================
-// 2️⃣ ATTEMPT REVIEW MODE (Optimized)
+// 2. ATTEMPT REVIEW
 // ============================================
-
 module.exports.getAttemptReview = async (req, res) => {
   try {
     const { sessionId } = req.params;
@@ -89,7 +77,7 @@ module.exports.getAttemptReview = async (req, res) => {
       .select("questionId sessionId selectedOption isCorrect timeTaken createdAt")
       .populate({
         path: "questionId",
-        select: "text options correctAnswer difficulty sessionId",
+        select: "text options correctAnswer difficulty",
       })
       .sort({ createdAt: 1 })
       .lean();
@@ -98,16 +86,12 @@ module.exports.getAttemptReview = async (req, res) => {
       return res.status(404).json({ message: "No review data found" });
     }
 
-    // ====================================
-    // Single Pass Processing (Fast)
-    // ====================================
-
     const review = [];
     const accuracyVsTime = [];
 
     let correct = 0;
     let totalTime = 0;
-     
+
     for (const attempt of attempts) {
       const time = attempt.timeTaken || 0;
       const isCorrect = attempt.isCorrect;
@@ -116,7 +100,8 @@ module.exports.getAttemptReview = async (req, res) => {
       totalTime += time;
 
       review.push({
-        sessionId:attempt.sesessionId,
+        // ─── FIX BUG 9 — typo was attempt.sesessionId ───
+        sessionId: attempt.sessionId,
         questionId: attempt.questionId._id,
         question: attempt.questionId.text,
         options: attempt.questionId.options,
@@ -134,26 +119,9 @@ module.exports.getAttemptReview = async (req, res) => {
     }
 
     const totalQuestions = attempts.length;
+    const accuracy = Number(((correct / totalQuestions) * 100).toFixed(2));
+    const averageTime = Number((totalTime / totalQuestions).toFixed(2));
 
-    const accuracy = Number(
-      ((correct / totalQuestions) * 100).toFixed(2)
-    );
-
-    const averageTime = Number(
-      (totalTime / totalQuestions).toFixed(2)
-    );
-    const obj={
-      review,
-      analytics: {
-        totalQuestions,
-        correct,
-        accuracy,
-        averageTime,
-        accuracyVsTime,
-      },
-    };
-    console.log(obj);
-    
     return res.json({
       review,
       analytics: {
@@ -164,7 +132,6 @@ module.exports.getAttemptReview = async (req, res) => {
         accuracyVsTime,
       },
     });
-
   } catch (error) {
     console.error("Attempt Review Error:", error);
     return res.status(500).json({ message: "Server error" });

@@ -8,6 +8,7 @@ import {
   BottomNav,
   SessionResultCard
 } from "../components/PracticeComponent";
+import Loader from "./Loader";
 
 const PracticeEnginePage = () => {
 
@@ -76,9 +77,7 @@ const PracticeEnginePage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-12 h-0.5 bg-primary/20 rounded-full overflow-hidden">
-          <div className="w-full h-full bg-primary animate-[loading_1.5s_ease-in-out_infinite]" />
-        </div>
+        <Loader/>
       </div>
     );
   }

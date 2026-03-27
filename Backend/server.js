@@ -9,6 +9,7 @@ const topicRoute=require("./routes/topic.routes");
 const practiceRoute=require("./routes/practice.routes");
 const sessionRoutes = require("./routes/session.routes");
 const profileRoutes = require("./routes/analytics.routes");
+const mockRoutes = require("./routes/mock.routes");
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))
@@ -23,5 +24,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/syllabus",sectionRoute);
 app.use("/api/syllabus",topicRoute);
 app.use("/api/session",practiceRoute);
+app.use("/api/mock", mockRoutes);
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

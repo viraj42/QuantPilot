@@ -11,3 +11,9 @@ export const getRecentTopics = () =>
 
 export const getWeakTopics = () =>
   apiRequest("/analytics/weak-topics", "GET", null, true);
+
+export const getUserRank = () =>
+  apiRequest("/analytics/get_Rank", "GET", null, true);
+
+export const getInsight = () =>
+  apiRequest("/analytics/getInsight", "GET", null, true);

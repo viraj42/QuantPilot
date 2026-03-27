@@ -5,6 +5,7 @@ import { Breadcrumb, SectionProgressStrip, TopicCard } from '../components/Topic
 import { motion } from "framer-motion";
 import Navbar from '../components/Navbar';
 import Background3D from '../components/Background3D';
+import Loader from './Loader';
 
 const SectionTopicsPage = () => {
   const { sectionId } = useParams();
@@ -69,7 +70,7 @@ const SectionTopicsPage = () => {
       <Background3D />
       <Navbar />
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-10 h-1 bg-primary animate-pulse rounded-full" />
+        <Loader/>
       </div>
     </div>
   );

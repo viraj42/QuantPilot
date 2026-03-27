@@ -4,9 +4,11 @@ import SectionCard from '../components/sectionCard';
 import UniversalTopicCard from '../components/UniversalTopicCard';
 import { getSession, getRecentTopics } from '../api/practice.api';
 import Navbar from '../components/Navbar';
+import { useNavigate } from 'react-router-dom';
+import Loader from './Loader';
 
 const PracticeHome = () => {
-
+  const navigate=useNavigate();
   const [state, setState] = useState({
     sections: [],
     recent: [],
@@ -46,6 +48,7 @@ const PracticeHome = () => {
           ? recentData.map(t => ({
               id: t.topicId,
               title: t.topicName,
+              sectionId: t.sectionId,
               status: t.overall >= 80 ? "Mastered" : "In Progress",
               easy: t.easy ?? 0,
               med: t.med ?? 0,
@@ -80,7 +83,7 @@ const PracticeHome = () => {
   if (state.loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
-        <div className="w-10 h-1 bg-primary animate-pulse rounded-full" />
+        <Loader/>
       </div>
     );
   }
@@ -124,6 +127,7 @@ const PracticeHome = () => {
                   hard={section.hard}
                   progress={section.progress}
                   link={`/practice/${section.slug}`}
+                  
                 />
 
               ))}
@@ -148,9 +152,9 @@ const PracticeHome = () => {
 
                 {state.recent.map(topic => (
 
-                  <div key={topic.id} className="opacity-90 hover:opacity-100 transition-opacity">
+                  <div key={topic.id} className="opacity-90 hover:opacity-100 transition-opacity" onClick={() => navigate(`/practice/${topic.sectionId}/${topic.id}`)}>
 
-                    <UniversalTopicCard topic={topic} />
+                    <UniversalTopicCard topic={topic}  />
 
                   </div>
 

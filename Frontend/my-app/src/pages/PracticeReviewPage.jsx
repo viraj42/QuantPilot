@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 
 import Navbar from "../components/Navbar";
 import Background3D from "../components/Background3D";
+import Loader from "./Loader";
 
 function PracticeReviewPage() {
   const { sessionId } = useParams();
@@ -42,7 +43,7 @@ function PracticeReviewPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-12 h-0.5 bg-primary/20 rounded-full overflow-hidden">
-          <div className="w-full h-full bg-primary animate-[loading_1.5s_infinite]" />
+          <Loader/>
         </div>
       </div>
     );

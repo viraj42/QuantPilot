@@ -1,5 +1,10 @@
 const mongoose = require("mongoose");
 
+// MockConfig is the "template" for a company's exam pattern
+// One config per company — seeded by admin
+// difficultyMix values must sum to questionCount per section
+// Example for TCS NQT Quant section (30 questions): easy:10, medium:15, hard:5
+
 const mockConfigSchema = new mongoose.Schema(
   {
     companyId: {
@@ -11,7 +16,7 @@ const mockConfigSchema = new mongoose.Schema(
     duration: {
       type: Number,
       required: true,
-      min: 1,
+      min: 1, // in minutes — converted to seconds in controller
     },
     sections: [
       {
