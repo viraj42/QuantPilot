@@ -58,14 +58,14 @@ const Navbar = () => {
   // ── Authenticated nav links ──
   const authLinks = [
     { to: "/dashboard", label: "Dashboard" },
-    { to: "/practice",  label: "Practice"  },
+    { to: "/practice", label: "Practice" },
     { to: "/mock/home", label: "Mock Tests" },
   ];
 
   // ── Public nav links ──
   const publicLinks = [
-    { href: "#how",     label: "How it works" },
-    { href: "#modules", label: "Modules"      },
+    { href: "#how", label: "How it works" },
+    { href: "#modules", label: "Modules" },
   ];
 
   // ── Mobile bottom-sheet drawer ──
