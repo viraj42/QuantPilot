@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { motion } from "framer-motion"; 
+import { motion } from "framer-motion";
 import Alert from "../components/Alert";
 import { registerUser } from "../api/auth.api";
 import useAuth from "../utils/useAuth";
@@ -49,14 +49,14 @@ function Signup() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-background dark:bg-background relative overflow-hidden p-4 sm:p-6 transition-colors duration-500">
-      
+
       {/* Dynamic Background Glows */}
       <div className="absolute top-[-5%] left-[-5%] w-[30%] h-[30%] bg-primary/10 blur-[100px] rounded-full pointer-events-none opacity-50" />
       <div className="absolute bottom-[-5%] right-[-5%] w-[30%] h-[30%] bg-secondary/10 blur-[100px] rounded-full pointer-events-none opacity-50" />
 
       <Alert msg={alertMsg} shut={() => setAlertMsg("")} />
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
@@ -64,7 +64,7 @@ function Signup() {
       >
         {/* --- LEFT BRANDING PANE --- */}
         <div className="hidden lg:flex flex-1 flex-col items-center justify-center p-10 bg-primary/5 dark:bg-primary/10 relative border-r border-border/50">
-          <motion.div 
+          <motion.div
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.6 }}
@@ -94,7 +94,7 @@ function Signup() {
 
         {/* --- RIGHT FORM PANE --- */}
         <div className="flex-1 flex flex-col justify-center p-8 sm:p-12 bg-surface/40 dark:bg-surface/20 backdrop-blur-xl">
-          
+
           {/* Logo Area */}
           <div className="flex items-center gap-2.5 mb-8 self-start">
             <div className="bg-primary text-white w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm shadow-lg shadow-primary/20">
@@ -159,10 +159,10 @@ function Signup() {
               />
             </div>
 
-            <motion.button 
+            <motion.button
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
-              type="submit" 
+              type="submit"
               className="btn-primary py-3 text-sm font-bold shadow-lg shadow-primary/20 mt-2"
             >
               Create Account
