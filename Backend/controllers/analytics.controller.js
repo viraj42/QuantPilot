@@ -26,6 +26,14 @@ exports.getProfileDashboard = async (req, res) => {
                 _id: null,
                 totalAttempts: { $sum: 1 },
                 totalCorrect: { $sum: { $cond: ["$isCorrect", 1, 0] } },
+                uniqueQuestions: { $addToSet: "$questionId" },
+              },
+            },
+            {
+              $project: {
+                totalAttempts: 1,
+                totalCorrect: 1,
+                totalUniqueSolved: { $size: "$uniqueQuestions" },
               },
             },
           ],
@@ -73,11 +81,13 @@ exports.getProfileDashboard = async (req, res) => {
                 _id: "$difficulty",
                 total: { $sum: 1 },
                 correct: { $sum: { $cond: ["$isCorrect", 1, 0] } },
+                uniqueSolved: { $addToSet: "$questionId" },
               },
             },
             {
               $project: {
                 difficulty: "$_id",
+                solved: { $size: "$uniqueSolved" },
                 mastery: {
                   $cond: [
                     { $eq: ["$total", 0] },
@@ -100,7 +110,7 @@ exports.getProfileDashboard = async (req, res) => {
             {
               $group: {
                 _id: {
-                  $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+                  $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Kolkata" },
                 },
                 count: { $sum: 1 },
               },
@@ -183,6 +193,7 @@ exports.getProfileDashboard = async (req, res) => {
 
     const totalAttempts = data.globalStats?.[0]?.totalAttempts || 0;
     const totalCorrect = data.globalStats?.[0]?.totalCorrect || 0;
+    const totalUniqueSolved = data.globalStats?.[0]?.totalUniqueSolved || 0;
 
     const globalAccuracy = totalAttempts
       ? Number(((totalCorrect / totalAttempts) * 100).toFixed(2))
@@ -198,13 +209,20 @@ exports.getProfileDashboard = async (req, res) => {
 
     const difficultyProgress = (data.difficultyProgress || []).map((d) => ({
       difficulty: d.difficulty,
+      solved: d.solved || 0,
       mastery: Number(d.mastery.toFixed(2)),
     }));
 
     ["easy", "medium", "hard"].forEach((level) => {
       if (!difficultyProgress.find((d) => d.difficulty === level)) {
-        difficultyProgress.push({ difficulty: level, mastery: 0 });
+        difficultyProgress.push({ difficulty: level, solved: 0, mastery: 0 });
       }
+    });
+
+    // Build a convenient lookup: { easy: N, medium: N, hard: N }
+    const solvedByDifficulty = {};
+    difficultyProgress.forEach((d) => {
+      solvedByDifficulty[d.difficulty] = d.solved;
     });
 
     const heatmap = (data.heatmap || []).map((d) => ({
@@ -236,10 +254,12 @@ exports.getProfileDashboard = async (req, res) => {
 
     return res.json({
       totalAttempts,
+      totalUniqueSolved,
       globalAccuracy,
       sectionOverview,
       topicProgress,
       difficultyProgress,
+      solvedByDifficulty,
       heatmap,
       streak,
     });

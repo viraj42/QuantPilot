@@ -10,13 +10,15 @@ const ProfileDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth(); // Import useAuth at the top
-  const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name || user?.email || 'default'}`;
+  const avatarUrl = `https://api.dicebear.com/7.x/identicon/svg?seed=${user?.name}`;
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const res = await getProfileOverview();
         setData(res);
+        console.log(res);
+        
       } catch (err) {
         console.error("Profile load failed", err);
       } finally {
@@ -28,9 +30,10 @@ const ProfileDashboard = () => {
 
   if (loading) return <Loader/>;
 
-  const solvedEasy = data.totalAttempts * 0.4; 
-  const solvedMed = data.totalAttempts * 0.45;
-  const solvedHard = data.totalAttempts * 0.15;
+  const solvedEasy = data.solvedByDifficulty?.easy || 0;
+  const solvedMed  = data.solvedByDifficulty?.medium || 0;
+  const solvedHard = data.solvedByDifficulty?.hard || 0;
+  const totalSolvedDiff = solvedEasy + solvedMed + solvedHard || 1; // avoid div/0
 
   const months = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
 
@@ -40,11 +43,13 @@ const ProfileDashboard = () => {
    */
   const getDayData = (monthIdx, dayIdx) => {
     if (!data.heatmap) return 0;
-    // Map Apr (Idx 0) to Month 4, Jan (Idx 9) to Month 1, etc.
-    const year = monthIdx >= 9 ? 2026 : 2025; 
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // 1-12
     const actualMonth = ((monthIdx + 3) % 12) + 1;
+    // If this month-number is greater than the current month, it belongs to the previous year
+    const year = actualMonth > currentMonth ? currentYear - 1 : currentYear;
     const dateString = `${year}-${actualMonth.toString().padStart(2, '0')}-${(dayIdx + 1).toString().padStart(2, '0')}`;
-    
     const dayRecord = data.heatmap.find(d => d.date === dateString);
     return dayRecord ? dayRecord.solved : 0;
   };
@@ -62,7 +67,7 @@ const ProfileDashboard = () => {
             <div className="w-24 h-24 rounded-3xl bg-muted mx-auto mb-4 overflow-hidden border-4 border-surface shadow-lg">
                <img src={avatarUrl} alt="avatar" />
             </div>
-            <h2 className="text-xl font-heading font-black tracking-tight">Viraj Padaval</h2>
+            <h2 className="text-xl font-heading font-black tracking-tight">{user?.name}</h2>
             <p className="text-[10px] font-bold opacity-40 uppercase tracking-[0.2em] mb-6">Elite Member</p>
             
             <div className="flex items-center justify-center gap-2 px-4 py-2 bg-accent/10 text-accent rounded-xl border border-accent/20">
@@ -75,28 +80,36 @@ const ProfileDashboard = () => {
              <h3 className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-6 px-1">Difficulty Mastery</h3>
              <div className="flex items-center justify-between gap-4">
                 <div className="relative w-32 h-32 flex-shrink-0">
-                  <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                 <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                     <circle cx="18" cy="18" r="16" fill="none" className="stroke-muted/30" strokeWidth="2.5" />
-                    <circle cx="18" cy="18" r="16" fill="none" stroke="oklch(0.7 0.2 160)" strokeWidth="2.5" strokeDasharray="30 100" strokeLinecap="round" />
-                    <circle cx="18" cy="18" r="16" fill="none" stroke="oklch(0.8 0.15 80)" strokeWidth="2.5" strokeDasharray="25 100" strokeDashoffset="-32" strokeLinecap="round" />
-                    <circle cx="18" cy="18" r="16" fill="none" stroke="oklch(0.6 0.2 25)" strokeWidth="2.5" strokeDasharray="15 100" strokeDashoffset="-60" strokeLinecap="round" />
+                    <circle cx="18" cy="18" r="16" fill="none" stroke="oklch(0.7 0.2 160)" strokeWidth="2.5"
+                      strokeDasharray={`${((solvedEasy / totalSolvedDiff) * 100).toFixed(1)} 100`}
+                      strokeLinecap="round" />
+                    <circle cx="18" cy="18" r="16" fill="none" stroke="oklch(0.8 0.15 80)" strokeWidth="2.5"
+                      strokeDasharray={`${((solvedMed / totalSolvedDiff) * 100).toFixed(1)} 100`}
+                      strokeDashoffset={`-${((solvedEasy / totalSolvedDiff) * 100).toFixed(1)}`}
+                      strokeLinecap="round" />
+                    <circle cx="18" cy="18" r="16" fill="none" stroke="oklch(0.6 0.2 25)" strokeWidth="2.5"
+                      strokeDasharray={`${((solvedHard / totalSolvedDiff) * 100).toFixed(1)} 100`}
+                      strokeDashoffset={`-${(((solvedEasy + solvedMed) / totalSolvedDiff) * 100).toFixed(1)}`}
+                      strokeLinecap="round" />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-black">{data.totalAttempts}</span>
+                    <span className="text-2xl font-black">{data.totalUniqueSolved}</span>
                     <span className="text-[9px] font-bold opacity-30 uppercase tracking-tighter mt-1">Solved</span>
                   </div>
                 </div>
 
                 <div className="flex-1 space-y-3">
                    {[
-                     { label: 'Easy', solved: Math.round(solvedEasy), total: 933, col: 'text-teal-500' },
-                     { label: 'Med.', solved: Math.round(solvedMed), total: 2030, col: 'text-yellow-500' },
-                     { label: 'Hard', solved: Math.round(solvedHard), total: 916, col: 'text-rose-500' }
+                     { label: 'Easy', solved: solvedEasy, col: 'text-teal-500' },
+                     { label: 'Med.', solved: solvedMed,  col: 'text-yellow-500' },
+                     { label: 'Hard', solved: solvedHard, col: 'text-rose-500' }
                    ].map(item => (
                      <div key={item.label} className="bg-muted/30 p-2 rounded-lg">
                         <div className="flex justify-between items-center mb-0.5">
                           <span className={`text-[10px] font-black uppercase ${item.col}`}>{item.label}</span>
-                          <span className="text-[11px] font-bold">{item.solved}<span className="opacity-30 text-[9px]">/{item.total}</span></span>
+                          <span className="text-[11px] font-bold">{item.solved}</span>
                         </div>
                      </div>
                    ))}
@@ -114,7 +127,7 @@ const ProfileDashboard = () => {
             </div>
             <div className="glass-card p-6 border-none bg-secondary/5 shadow-sm">
               <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Total Solved</p>
-              <p className="text-3xl font-heading font-black text-secondary">{data.totalAttempts}</p>
+              <p className="text-3xl font-heading font-black text-secondary">{data.totalUniqueSolved}</p>
             </div>
           </div>
 

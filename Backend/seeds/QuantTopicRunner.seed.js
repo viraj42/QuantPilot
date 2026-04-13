@@ -9,24 +9,23 @@ const MONGO_URI =
   "mongodb+srv://virajpadaval42_db_user:fp3gzkHcnbizQCit@cluster0.ud5uxvp.mongodb.net/QuantPilot?retryWrites=true&w=majority&appName=Cluster0";
 
 /**
- * 🔒 FIXED SECTION CONFIG (DO NOT CHANGE)
+ * 🔒 FIXED SECTION CONFIG (ENGLISH)
  */
-const SECTION_ID = "69996ba326333cb6b9df6ebc";
-const SECTION_NAME = "Logical Reasoning";
+const SECTION_ID = "69996bae26333cb6b9df6ebf";
+const SECTION_NAME = "English";
 
 /**
- * 🔒 EXACT ORDER — LOGICAL REASONING
+ * 🔒 EXACT ORDER — ENGLISH (PLACEMENT OPTIMIZED)
  */
-const REASONING_TOPICS = [
-  "Coding-Decoding",
-  "Direction Sense",
-  "Blood Relations",
-  "Order & Ranking",
-  "Series (Alphabet + Number Patterns)",
-  "Syllogism",
-  "Statement & Conclusion / Inference",
-  "Seating Arrangement",
-  "Puzzle",
+const ENGLISH_TOPICS = [
+  "Error Detection",
+  "Sentence Correction",
+  "Sentence Structure ",
+  "Tenses & Verb Forms",
+  "Subject-Verb Agreement",
+  "Prepositions & Conjunctions",
+  "Articles & Determiners",
+  "Parts of Speech"
 ];
 
 async function seed() {
@@ -46,7 +45,7 @@ async function seed() {
 
     if (!section) {
       throw new Error(
-        "❌ Logical Reasoning section mismatch (id/name not found)"
+        "❌ English section mismatch (id/name not found)"
       );
     }
 
@@ -55,10 +54,10 @@ async function seed() {
     );
 
     /**
-     * 🌱 Seed ONLY reasoning topics
+     * 🌱 Seed ENGLISH topics
      */
-    for (let i = 0; i < REASONING_TOPICS.length; i++) {
-      const topicName = REASONING_TOPICS[i];
+    for (let i = 0; i < ENGLISH_TOPICS.length; i++) {
+      const topicName = ENGLISH_TOPICS[i];
 
       await Topic.updateOne(
         {
@@ -81,7 +80,7 @@ async function seed() {
       console.log(`✔ Seeded: ${topicName}`);
     }
 
-    console.log("🎉 Logical Reasoning topics seeded successfully");
+    console.log("🎉 English topics seeded successfully");
     process.exit(0);
   } catch (err) {
     console.error("❌ Seeder failed:", err.message);

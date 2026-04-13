@@ -4,6 +4,28 @@ import { startMock, submitMock } from "../api/mock.api";
 import { Clock, ChevronLeft, ChevronRight, Flag, Menu, X } from "lucide-react";
 import Loader from "./Loader";
 
+// ── KaTeX imports (run: npm install katex react-katex) ────────
+import 'katex/dist/katex.min.css';
+import { InlineMath } from 'react-katex';
+
+// ── ONLY NEW LOGIC: renders $...$ as inline math, rest as text ─
+// Falls back to plain text when no $ present — zero overhead for
+// normal aptitude questions that have no math notation.
+const renderMath = (text) => {
+  if (!text || !text.includes('$')) return text;
+
+  const parts = text.split(/(\$[^$]+\$)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('$') && part.endsWith('$')) {
+      const math = part.slice(1, -1);
+      return (
+        <InlineMath key={i} math={math} />
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+};
+
 const MockExam = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -28,6 +50,9 @@ const MockExam = () => {
         setLoading(false);
       } catch (err) {
         navigate("/mock/home");
+      }
+      finally {
+        setLoading(false);
       }
     };
     initExam();
@@ -80,6 +105,9 @@ const MockExam = () => {
       navigate(`/mock/${id}/result`);
     } catch (err) {
       alert("Submission failed.");
+    }
+    finally {
+        setLoading(false);
     }
   };
 
@@ -154,8 +182,9 @@ const MockExam = () => {
                   )}
                 </div>
                 
+                {/* ── CHANGE 1: question text now renders $...$ as KaTeX ── */}
                 <p className="text-lg md:text-xl font-medium mb-8 leading-relaxed">
-                  {currentQuestion.text}
+                  {renderMath(currentQuestion.text)}
                 </p>
 
                 <div className="grid grid-cols-1 gap-3">
@@ -174,7 +203,8 @@ const MockExam = () => {
                       }`}>
                         {String.fromCharCode(65 + i)}
                       </span>
-                      <span className="font-medium text-sm md:text-base">{opt}</span>
+                      {/* ── CHANGE 2: option text now renders $...$ as KaTeX ── */}
+                      <span className="font-medium text-sm md:text-base">{renderMath(opt)}</span>
                     </button>
                   ))}
                 </div>
