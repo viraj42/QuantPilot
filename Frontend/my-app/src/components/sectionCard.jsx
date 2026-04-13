@@ -38,10 +38,10 @@ const SectionCard = ({ sectionName, topicCount, easy, medium, hard, progress, li
         <div className="p-6 flex items-center justify-between">
 
           {/* Difficulty Bars */}
-          <div className="flex-1 flex items-end justify-start gap-10 h-28 relative">
+          <div className="flex-1 flex items-end justify-start gap-6 sm:gap-10 h-28 relative">
 
             {/* X Axis */}
-            <div className="absolute bottom-0 left-0 w-[260px] h-[2px] bg-border/50 rounded-full" />
+            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-border/50 rounded-full" />
 
             {difficultyStats.map((d, i) => {
 
@@ -60,7 +60,7 @@ const SectionCard = ({ sectionName, topicCount, easy, medium, hard, progress, li
                     initial={{ height: 0 }}
                     animate={{ height: `${heightPercent}%` }}
                     transition={{ duration: 0.9, ease: "easeOut" }}
-                    className={`w-14 rounded-t-xl bg-gradient-to-t ${d.gradient} shadow-sm`}
+                    className={`w-10 sm:w-14 rounded-t-xl bg-gradient-to-t ${d.gradient} shadow-sm`}
                   />
 
                 </div>
@@ -69,8 +69,8 @@ const SectionCard = ({ sectionName, topicCount, easy, medium, hard, progress, li
 
           </div>
 
-          {/* Mastery Circle */}
-          <div className="relative flex items-center justify-center shrink-0 ml-6">
+          {/* Mastery Circle — hidden on mobile, shown sm+ */}
+          <div className="relative items-center justify-center shrink-0 ml-6 hidden sm:flex">
 
             <svg width="100" height="100" className="transform -rotate-90">
 
@@ -106,6 +106,20 @@ const SectionCard = ({ sectionName, topicCount, easy, medium, hard, progress, li
               </span>
             </div>
 
+          </div>
+
+          {/* Mastery Pill — mobile only (replaces donut) */}
+          <div className="sm:hidden flex-shrink-0 ml-3 flex flex-col items-center gap-1">
+            <span className="text-xl font-heading font-black tracking-tighter text-primary">{progress}%</span>
+            <span className="text-[7px] font-black uppercase tracking-[0.2em] text-foreground/30">Mastery</span>
+            <div className="w-10 h-1 rounded-full bg-border/40 overflow-hidden mt-0.5">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 1.2, ease: "easeOut" }}
+                className="h-full bg-primary rounded-full"
+              />
+            </div>
           </div>
 
         </div>

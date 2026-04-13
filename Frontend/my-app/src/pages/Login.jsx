@@ -104,7 +104,7 @@ return ( <div className="min-h-screen w-full flex items-center justify-center bg
             name="email"
             value={formData.email}
             onChange={onChangeHandler}
-            placeholder="pilot@quant.com"
+            placeholder="viraj@quant.com"
             className="w-full bg-background/50 dark:bg-background/20 border border-border/60 rounded-xl px-4 py-[11px] focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-foreground/20 text-sm"
             required
           />
@@ -142,7 +142,7 @@ return ( <div className="min-h-screen w-full flex items-center justify-center bg
           <div className="h-px flex-1 bg-border/40" />
         </div>
 
-        <button 
+        {/* <button 
           type="button" 
           className="flex items-center justify-center gap-2.5 w-full bg-surface/50 dark:bg-surface/10 border border-border/60 py-2.5 rounded-xl font-semibold hover:bg-muted/30 transition-all text-sm text-foreground"
         >
@@ -152,7 +152,7 @@ return ( <div className="min-h-screen w-full flex items-center justify-center bg
             className="w-4 h-4"
           />
           Google Account
-        </button>
+        </button> */}
       </form>
 
       <p className="mt-7 text-center text-sm text-foreground/40 font-medium">

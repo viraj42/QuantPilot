@@ -8,13 +8,18 @@ const Question = require("../models/question.model");
  * Returns frozen array of { questionId, sectionId } — this is the "paper".
  *
  * Design decisions:
- * - Random selection per difficulty bucket per section
- * - If DB doesn't have enough questions of a difficulty, fills with whatever is available
- *   (graceful degradation — better than refusing to generate)
- * - No user-specific logic here — same config generates same-style paper for everyone
- *   (different random draw per user)
+ * - Questions are distributed EVENLY across all topics within a section.
+ *   e.g. 15 Quant questions across 5 topics → 3 per topic (not 15 from one topic).
+ * - Base allocation = floor(count / numTopics). Remainder is distributed one-by-one
+ *   to topics that have spare questions, prioritising topics with more available stock.
+ * - If a topic has fewer questions than its allocation, it contributes what it has and
+ *   the shortfall is redistributed to other topics (graceful degradation).
+ * - $sample is used per-topic so randomness is preserved within each topic pool.
+ * - No user-specific logic — same config, different random draw per user.
+ * - Zero changes to the return shape: [{ questionId, sectionId }]
+ *   → mock controller and frontend are completely unaffected.
  *
- * @param {Array} sections - from MockConfig.sections (populated or raw)
+ * @param {Array} sections - from MockConfig.sections
  * @returns {Array} frozenQuestions — [{ questionId, sectionId }]
  */
 async function buildMockPaper(sections) {
@@ -23,13 +28,12 @@ async function buildMockPaper(sections) {
   for (const section of sections) {
     const { sectionId, difficultyMix } = section;
 
-    // For each difficulty bucket, pick random questions from that section's topics
     for (const [difficulty, count] of Object.entries(difficultyMix)) {
       if (!count || count === 0) continue;
 
-      // Aggregate: find all questions of this difficulty across all topics in this section
-      // Uses $lookup to join topics → filter by sectionId
-      const questions = await Question.aggregate([
+      // ── STEP 1: Find all distinct topics in this section that have
+      //            at least 1 question of this difficulty ──────────────
+      const topicPool = await Question.aggregate([
         {
           $lookup: {
             from: "topics",
@@ -45,22 +49,108 @@ async function buildMockPaper(sections) {
             difficulty,
           },
         },
-        { $sample: { size: count } }, // random selection
-        { $project: { _id: 1 } },
+        // Count available questions per topic
+        {
+          $group: {
+            _id: "$topic._id",
+            available: { $sum: 1 },
+          },
+        },
+        // Sort descending so topics with more questions get first pick on remainder
+        { $sort: { available: -1 } },
       ]);
 
-      for (const q of questions) {
-        frozenQuestions.push({
-          questionId: q._id,
-          sectionId: new mongoose.Types.ObjectId(sectionId),
-        });
+      if (topicPool.length === 0) {
+        console.warn(
+          `[MockPaper] Section ${sectionId} [${difficulty}]: no topics found — skipping`
+        );
+        continue;
       }
 
-      // If we got fewer questions than requested, log it (don't throw)
-      if (questions.length < count) {
+      // ── STEP 2: Compute per-topic allocation ──────────────────────
+      // Base = floor(count / numTopics), remainder distributed one-by-one
+      const numTopics  = topicPool.length;
+      const basePerTopic = Math.floor(count / numTopics);
+      let   remainder    = count % numTopics;
+
+      // Initial allocation — capped by what each topic actually has
+      const allocations = topicPool.map((t) => {
+        const desired = basePerTopic + (remainder > 0 ? 1 : 0);
+        if (remainder > 0) remainder--;
+        return {
+          topicId:   t._id,
+          available: t.available,
+          allocated: Math.min(desired, t.available),
+        };
+      });
+
+      // ── STEP 3: Redistribute shortfall ───────────────────────────
+      // If any topic couldn't fill its allocation, add the shortfall back
+      // to a pool and give it to topics that still have spare questions.
+      let shortfall = allocations.reduce(
+        (acc, a) => acc + (Math.min(basePerTopic + 1, a.available) - a.allocated),
+        0
+      );
+      // More precise: total desired vs total allocated
+      const totalAllocated = allocations.reduce((s, a) => s + a.allocated, 0);
+      shortfall = count - totalAllocated;
+
+      if (shortfall > 0) {
+        for (const a of allocations) {
+          if (shortfall <= 0) break;
+          const spare = a.available - a.allocated;
+          if (spare > 0) {
+            const extra = Math.min(spare, shortfall);
+            a.allocated += extra;
+            shortfall   -= extra;
+          }
+        }
+      }
+
+      if (shortfall > 0) {
         console.warn(
-          `[MockPaper] Section ${sectionId} [${difficulty}]: requested ${count}, got ${questions.length} — DB may need more questions`
+          `[MockPaper] Section ${sectionId} [${difficulty}]: requested ${count}, ` +
+          `DB only has ${count - shortfall} — paper will be short`
         );
+      }
+
+      // ── STEP 4: Sample per topic ──────────────────────────────────
+      for (const a of allocations) {
+        if (a.allocated === 0) continue;
+
+        const picked = await Question.aggregate([
+          {
+            $lookup: {
+              from: "topics",
+              localField: "topicId",
+              foreignField: "_id",
+              as: "topic",
+            },
+          },
+          { $unwind: "$topic" },
+          {
+            $match: {
+              "topic.sectionId": new mongoose.Types.ObjectId(sectionId),
+              "topic._id":       new mongoose.Types.ObjectId(a.topicId),
+              difficulty,
+            },
+          },
+          { $sample: { size: a.allocated } },
+          { $project: { _id: 1 } },
+        ]);
+
+        for (const q of picked) {
+          frozenQuestions.push({
+            questionId: q._id,
+            sectionId:  new mongoose.Types.ObjectId(sectionId),
+          });
+        }
+
+        if (picked.length < a.allocated) {
+          console.warn(
+            `[MockPaper] Topic ${a.topicId} [${difficulty}]: allocated ${a.allocated}, sampled ${picked.length}`
+          );
+        }
       }
     }
   }

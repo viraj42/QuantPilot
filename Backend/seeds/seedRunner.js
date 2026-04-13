@@ -11,7 +11,7 @@ const mongoose = require("mongoose");
 // 👉 Path to your JSON file
 const JSON_FILE_PATH = "../datasets/Percentagetemp.json";
 // 👉 Existing Topic ObjectId from DB
-const TOPIC_ID = "69996f910514d5ed27346f62";
+const TOPIC_ID = "69da51dcd1b008228f1638ea";
 
 // 👉 Mongo URI (or use env)
 const MONGO_URI ="mongodb+srv://virajpadaval42_db_user:fp3gzkHcnbizQCit@cluster0.ud5uxvp.mongodb.net/QuantPilot?retryWrites=true&w=majority&appName=Cluster0"
