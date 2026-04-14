@@ -15,6 +15,10 @@ mongoose
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.error(err));
 
+//to avoid cold start
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
 
 app.use(express.json());
 app.use(cors());
